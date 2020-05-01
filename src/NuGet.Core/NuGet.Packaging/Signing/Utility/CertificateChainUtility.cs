@@ -229,8 +229,8 @@ namespace NuGet.Packaging.Signing
         internal static IEnumerable<string> GetStatusAndMessagesFromChainStatuses(IEnumerable<X509ChainStatus> chainStatuses)
         {
             return chainStatuses
+                .Where(x => !string.IsNullOrEmpty(x.StatusInformation?.Trim()))
                 .Select(x => $"{x.Status}: {x.StatusInformation?.Trim()}")
-                .Where(x => !string.IsNullOrEmpty(x))
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(x => x, StringComparer.Ordinal);
         }
