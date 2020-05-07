@@ -30,6 +30,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using NuGet.Protocol;
 using System.Windows.Threading;
+using System.ComponentModel;
 
 namespace NuGet.PackageManagement.UI
 {
@@ -76,6 +77,8 @@ namespace NuGet.PackageManagement.UI
 
         internal InfiniteScrollList PackageList { get => _packageList; }
 
+        public int PackageListCount { get => _packageList.FilteredPackageItems.Count(); }
+
         internal PackageSourceMoniker SelectedSource
         {
             get
@@ -112,7 +115,7 @@ namespace NuGet.PackageManagement.UI
             _sinceLastRefresh = Stopwatch.StartNew();
             _sinceUserAction = new Stopwatch();
             _performanceMetrics = new PerformanceMetrics();
-
+            
             _uiLogger = uiLogger;
             Model = model;
             Settings = nugetSettings;
@@ -161,7 +164,8 @@ namespace NuGet.PackageManagement.UI
             // UI is initialized. Start the first search
             _packageList.CheckBoxesEnabled = _topPanel.Filter == ItemFilter.UpdatesAvailable;
             _packageList.IsSolution = Model.IsSolution;
-
+            //_packageList.LoadItemsCompleted += PackageList_LoadItemsCompleted;
+            //_packageList.Loaded += PackageList_Loaded;
             Loaded += PackageManagerLoaded;
 
             // register with the UI controller
@@ -193,6 +197,18 @@ namespace NuGet.PackageManagement.UI
             var gen = PackageList._list.ItemContainerGenerator;
             gen.StatusChanged += Gen_StatusChanged;
         }
+
+        //private void PackageList_Loaded(object sender, RoutedEventArgs e)
+        //{
+        //    var updateCount = _packageList.UpdateCount; //_packageList.Items.Count;//.FilterCount;
+        //    _topPanel.UpdateCountOnUpdatesTab(updateCount);
+        //}
+
+        //private void PackageList_LoadItemsCompleted(object sender, EventArgs e)
+        //{
+        //    var updateCount = _packageList.UpdateCount; //_packageList.Items.Count;//.FilterCount;
+        //    _topPanel.UpdateCountOnUpdatesTab(updateCount);
+        //}
 
         private void SolutionManager_ProjectsUpdated(object sender, NuGetProjectEventArgs e)
         {
@@ -787,9 +803,9 @@ namespace NuGet.PackageManagement.UI
 
                 if (_topPanel.Filter.Equals(ItemFilter.UpdatesAvailable))
                 {
-                    // it means selected tab is update itself, so just wait for searchAsyncTask to complete
-                    // without making another call to loader to get all packages.
-                    _topPanel.UpdateCountOnUpdatesTab(count: 0);
+                    //// it means selected tab is update itself, so just wait for searchAsyncTask to complete
+                    //// without making another call to loader to get all packages.
+                    //_topPanel.UpdateCountOnUpdatesTab(count: 0);
 
                     var searchResult = await searchResultTask;
                     Model.CachedUpdates = new PackageSearchMetadataCache
@@ -799,8 +815,8 @@ namespace NuGet.PackageManagement.UI
                     };
 
                     //TODO: this is wrong.
-                    var updateCount = _packageList.FilterCount;
-                    _topPanel.UpdateCountOnUpdatesTab(updateCount);
+                    //var updateCount = _packageList.UpdateCount; //_packageList.Items.Count;//.FilterCount;
+                    //_topPanel.UpdateCountOnUpdatesTab(updateCount);
                 }
                 else
                 {
@@ -816,7 +832,7 @@ namespace NuGet.PackageManagement.UI
                 await NuGetUIThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 _topPanel.UpdateDeprecationStatusOnInstalledTab(installedDeprecatedPackagesCount: 0);
-                _topPanel.UpdateCountOnUpdatesTab(count: 0);
+                //_topPanel.UpdateCountOnUpdatesTab(count: 0);
                 var loadContext = new PackageLoadContext(ActiveSources, Model.IsSolution, Model.Context);
                 var packageFeed = await CreatePackageFeedAsync(loadContext, ItemFilter.UpdatesAvailable, _uiLogger);
                 var loader = new PackageItemLoader(
@@ -832,7 +848,6 @@ namespace NuGet.PackageManagement.UI
                 var installedDeprecatedPackagesCount = await GetInstalledDeprecatedPackagesCountAsync(
                     loadContext, metadataProvider, refreshCts.Token);
 
-                var hasInstalledDeprecatedPackages = installedDeprecatedPackagesCount > 0;
                 _topPanel.UpdateDeprecationStatusOnInstalledTab(installedDeprecatedPackagesCount);
 
                 // Update updates tab count
@@ -841,8 +856,8 @@ namespace NuGet.PackageManagement.UI
                     Packages = await loader.GetAllPackagesAsync(refreshCts.Token),
                     IncludePrerelease = IncludePrerelease
                 };
-
-                _topPanel.UpdateCountOnUpdatesTab(Model.CachedUpdates.Packages.Count);
+                
+                //_topPanel.UpdateCountOnUpdatesTab(_packageList.UpdateCount);
             })
             .FileAndForget(TelemetryUtility.CreateFileAndForgetEventName(nameof(PackageManagerControl), nameof(RefreshInstalledAndUpdatesTabs)));
         }

@@ -139,18 +139,18 @@ namespace NuGet.PackageManagement.UI
             SetConsolidationAutomationProperties(TabConsolidate, count);
         }
 
-        public void UpdateCountOnUpdatesTab(int count)
-        {
-            if (count > 0)
-            {
-                _countUpdates.Text = count.ToString(CultureInfo.CurrentCulture);
-                _countUpdatesContainer.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                _countUpdatesContainer.Visibility = Visibility.Collapsed;
-            }
-        }
+        //public void UpdateCountOnUpdatesTab(int count)
+        //{
+        //    if (count > 0)
+        //    {
+        //        _countUpdates.Text = count.ToString(CultureInfo.CurrentCulture);
+        //        _countUpdatesContainer.Visibility = Visibility.Visible;
+        //    }
+        //    else
+        //    {
+        //        _countUpdatesContainer.Visibility = Visibility.Collapsed;
+        //    }
+        //}
 
         // the control that is used as container for the search box.
         public Border SearchControlParent => _searchControlParent;

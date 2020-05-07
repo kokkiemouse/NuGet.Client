@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -124,36 +125,57 @@ namespace NuGet.PackageManagement.UI
         public bool IsSolution { get; set; }
 
         public ObservableCollection<object> Items { get; } = new ObservableCollection<object>();
+        public ICollectionView CollectionView => CollectionViewSource.GetDefaultView(Items);
 
         public int FilterCount
         {
             get
             {
-                await _joinableTaskFactory.Value.SwitchToMainThreadAsync();
-                var view = CollectionViewSource.GetDefaultView(Items);
-
-                if (view.Filter != null)
-                {
-                    return view.Cast<object>().Count();
-                }
-                else
-                {
-                    return Items.Count;
-                }
+                return Items.Count;
             }
         }
 
-        //TODO: filter and thread check
-        public IEnumerable<PackageItemListViewModel> PackageItems
+        public int UpdateCount
         {
             get
             {
-                var filteredItems = Items;
-                var view = CollectionViewSource.GetDefaultView(Items);
+                //TODO: don't duplicate this logic.
+                return Items.Where((item) => item != _loadingStatusIndicator && (item as PackageItemListViewModel).IsUpdateAvailable).Count();
+            }
+        }
 
+        //public int FilterCountAsync()
+        //{
+        //    _joinableTaskFactory.Value.RunAsync(async () =>
+        //    {
+
+        //        await _joinableTaskFactory.Value.SwitchToMainThreadAsync();
+        //        var view = CollectionViewSource.GetDefaultView(Items);
+
+        //        if (view.Filter != null)
+        //        {
+        //            return view.Cast<object>().Count();
+        //        }
+        //        else
+        //        {
+        //            return Items.Count;
+        //        }
+        //    }
+        //}
+
+        public IEnumerable<PackageItemListViewModel> PackageItems => Items.OfType<PackageItemListViewModel>().ToArray();
+
+        //TODO: filter and thread check
+        public IEnumerable<PackageItemListViewModel> FilteredPackageItems
+        {
+            get
+            {
+                IEnumerable<object> filteredItems = Items;
+
+                var view = CollectionViewSource.GetDefaultView(Items);
                 if (view.Filter != null)
                 {
-                    filteredItems = (ObservableCollection<object>)view;
+                    filteredItems = view.Cast<object>();
                 }
 
                 return filteredItems.OfType<PackageItemListViewModel>().ToArray();
@@ -223,12 +245,12 @@ namespace NuGet.PackageManagement.UI
             if (selectedItem != null)
             {
                 // select the the previously selected item if it still exists.
-                selectedItem = PackageItems
+                selectedItem = FilteredPackageItems
                     .FirstOrDefault(item => item.Id.Equals(selectedItem.Id, StringComparison.OrdinalIgnoreCase));
             }
 
             // select the first item if none was selected before
-            _list.SelectedItem = selectedItem ?? PackageItems.FirstOrDefault();
+            _list.SelectedItem = selectedItem ?? FilteredPackageItems.FirstOrDefault();
         }
 
         private void LoadItems(PackageItemListViewModel selectedPackageItem, CancellationToken token, bool isUpdatesTab = false)
@@ -444,6 +466,7 @@ namespace NuGet.PackageManagement.UI
             var view = CollectionViewSource.GetDefaultView(Items);
             view.Filter = (item) => item == _loadingStatusIndicator || (item as PackageItemListViewModel).IsUpdateAvailable;
         }
+
         private void ClearItemsFilterForUpdatesAvailable()
         {
             var view = CollectionViewSource.GetDefaultView(Items);
@@ -847,7 +870,7 @@ namespace NuGet.PackageManagement.UI
 
         private void _updateButton_Click(object sender, RoutedEventArgs e)
         {
-            var selectedPackages = PackageItems.Where(p => p.Selected).ToArray();
+            var selectedPackages = FilteredPackageItems.Where(p => p.Selected).ToArray();
             UpdateButtonClicked(selectedPackages);
         }
 

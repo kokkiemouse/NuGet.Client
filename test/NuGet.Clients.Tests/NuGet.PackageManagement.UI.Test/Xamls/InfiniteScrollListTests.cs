@@ -82,7 +82,6 @@ namespace NuGet.PackageManagement.UI.Test
         public void PackageItems_Initialized_DefaultIsEmpty()
         {
             var list = new InfiniteScrollList();
-
             Assert.Empty(list.PackageItems);
         }
 

@@ -52,6 +52,13 @@ namespace NuGet.PackageManagement.UI
         /// Cached Package Metadata collected when we set the "count" of updates in the background
         /// </summary>
         public PackageSearchMetadataCache CachedUpdates { get; set; }
+        //public int UpdateCount
+        //{
+        //    get
+        //    {
+        //        return 17;
+        //    }
+        //}
 
         public event PropertyChangedEventHandler PropertyChanged;
 
